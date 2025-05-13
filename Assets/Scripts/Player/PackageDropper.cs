@@ -21,7 +21,7 @@ public class PackageDropper : MonoBehaviour
         }
     }
 
-    void DropPackage()
+    public void DropPackage()
     {
         if (packagePrefab == null || dropPoint == null)
         {

@@ -140,14 +140,31 @@ public class GameManager : MonoBehaviour
 
     public void OnPackageDelivered(bool correcto)
     {
-        if (correcto) successCount++;
-        else failCount++;
+        if (correcto)
+        {
+            successCount++;
+            HapticManager.Instance.SendHaptic("{\"type\":\"haptic\",\"vib\":150}");
+            HapticManager.Instance.SendHaptic("{\"type\":\"haptic\",\"led_ok\":1}");
+            HapticManager.Instance.SendHaptic("{\"type\":\"haptic\",\"lcd\":\"OK\"}");
+
+        }
+        else
+        {
+            failCount++;
+        }
 
         UpdateCounters();
 
         // Checar victoria/derrota
-        if (successCount >= missionsCount) { EndGame(true); return; }
-        if (failCount >= maxFailures) { EndGame(false); return; }
+        if (successCount >= missionsCount) { 
+            EndGame(true);
+            return; 
+        }
+
+        if (failCount >= maxFailures) { 
+            EndGame(false);
+            return; 
+        }
 
         // Siguiente misión
         currentMissionIndex++;

@@ -3445,6 +3445,58 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.0014151523, y: 0.0014384133, z: 0.000058996407}
   m_Center: {x: 0.00056187273, y: 0.00078867574, z: 0.0000000035943226}
+--- !u!1 &872618543
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 872618545}
+  - component: {fileID: 872618544}
+  m_Layer: 0
+  m_Name: Haptics
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &872618544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 872618543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9f5da83744bd6146a166bb50e8812ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  portName: COM3
+  baud: 115200
+  joyX: 0
+  joyY: 0
+  btnEnter: 0
+  btnTab: 0
+  btnSpace: 0
+  btnH: 0
+--- !u!4 &872618545
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 872618543}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 503.12006, y: -154.10953, z: -0.00000011920929}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &877326697 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -2893619745307080072, guid: 01cf4a0b287fafe42a8dc5389193e0a0, type: 3}
@@ -3997,12 +4049,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 10
-  minSpeed: 5
-  maxSpeed: 25
-  speedChangeRate: 2.5
-  minAltitude: 0
-  maxAltitude: 50
   yawAmount: 120
+  useHardwareInput: 1
+  smoothing: 0.1
+  deadzone: 0.1
+  dropper: {fileID: 0}
   thirdPerson: {fileID: 1503689602}
   topView: {fileID: 420521755}
   frontView: {fileID: 445136454}
@@ -7422,3 +7473,4 @@ SceneRoots:
   - {fileID: 382546601}
   - {fileID: 976731427}
   - {fileID: 447900449}
+  - {fileID: 872618545}

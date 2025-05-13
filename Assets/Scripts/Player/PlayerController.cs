@@ -1,91 +1,90 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using Cinemachine;
-using System;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Velocidad")]
-    public float speed = 5.0f;
-    public float minSpeed = 5.0f;
-    public float maxSpeed = 100.0f;
-    [Tooltip("Qué tan rápido cambia la velocidad (unidades/s) al mantener E/Q")]
-    public float speedChangeRate = 20f;
-
-    [Header("Altitud")]
-    [Tooltip("Altitud mínima que puede alcanzar el avión (mundo Y)")]
-    public float minAltitude = 0f;
-    [Tooltip("Altitud máxima que puede alcanzar el avión (mundo Y)")]
-    public float maxAltitude = 50f;
-
-    [Header("Rotación")]
-    public float yawAmount = 120;
+    [Header("Movimiento")]
+    public float speed = 5f;
+    public float yawAmount = 120f;
     private float yaw;
 
-    [Header("Cámaras Cinemachine")]
-    public CinemachineVirtualCamera thirdPerson;
-    public CinemachineVirtualCamera topView;
-    public CinemachineVirtualCamera frontView;
-    private int cameraPos = 0; // 0=third,1=top,2=front
+    [Header("Input")]
+    [Tooltip("Â¿Usar joystick hardware si estÃ¡ disponible?")]
+    public bool useHardwareInput = true;
+    [Range(0f, 1f), Tooltip("Suavizado exponencial (mÃ¡s bajo = mÃ¡s lento)")]
+    public float smoothing = 0.1f;
+    [Range(0f, 0.5f), Tooltip("Deadzone para ignorar ruido pequeÃ±o")]
+    public float deadzone = 0.1f;
+    private float smoothX = 0f, smoothY = 0f;
+
+    [Header("Dropper")]
+    public PackageDropper dropper;
+
+    [Header("CÃ¡maras")]
+    public CinemachineVirtualCamera thirdPerson, topView, frontView;
+    private int cameraPos = 0;
 
     void Update()
     {
-        HandleSpeedInput();
-        MoveAndClampAltitude();
-        HandleRotation();
-        HandleCameraSwitch();
-    }
+        // 1) Obtener raw input (hardware o teclado)
+        float rawX, rawY;
+        bool hw = useHardwareInput && HapticManager.Instance != null;
+        if (hw)
+        {
+            rawX = HapticManager.Instance.joyX;
+            rawY = HapticManager.Instance.joyY;
+        }
+        else
+        {
+            rawX = Input.GetAxis("Horizontal");
+            rawY = Input.GetAxis("Vertical");
+        }
 
-    void HandleSpeedInput()
-    {
-        // Aumenta velocidad con E, disminuye con Q
-        if (Input.GetKey(KeyCode.E))
-            speed += speedChangeRate * Time.deltaTime;
-        if (Input.GetKey(KeyCode.Q))
-            speed -= speedChangeRate * Time.deltaTime;
+        // 2) Deadzone
+        if (Mathf.Abs(rawX) < deadzone) rawX = 0;
+        if (Mathf.Abs(rawY) < deadzone) rawY = 0;
 
-        // Clamp entre minSpeed y maxSpeed
-        speed = Mathf.Clamp(speed, minSpeed, maxSpeed);
-    }
+        // 3) Suavizado exponencial
+        smoothX = Mathf.Lerp(smoothX, rawX, smoothing);
+        smoothY = Mathf.Lerp(smoothY, rawY, smoothing);
 
-    void MoveAndClampAltitude()
-    {
-        // Mover
+        // 4) Desplazamiento hacia adelante
         transform.position += transform.forward * speed * Time.deltaTime;
 
-        // Limitar altitud (eje Y)
-        Vector3 pos = transform.position;
-        pos.y = Mathf.Clamp(pos.y, minAltitude, maxAltitude);
-        transform.position = pos;
-    }
-
-    void HandleRotation()
-    {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
-
-        // Yaw
-        yaw += yawAmount * horizontalInput * Time.deltaTime;
-
-        // Pitch y roll para inclinación
-        float pitch = Mathf.Lerp(0, 20, Mathf.Abs(verticalInput)) * Mathf.Sign(verticalInput);
-        float roll = Mathf.Lerp(0, 30, Mathf.Abs(horizontalInput)) * -Mathf.Sign(horizontalInput);
-
+        // 5) Rotaciones: yaw, pitch, roll
+        yaw += yawAmount * smoothX * Time.deltaTime;
+        float pitch = Mathf.Lerp(0, 20, Mathf.Abs(smoothY)) * Mathf.Sign(smoothY);
+        float roll = Mathf.Lerp(0, 30, Mathf.Abs(smoothX)) * -Mathf.Sign(smoothX);
         transform.localRotation = Quaternion.Euler(
             Vector3.up * yaw +
             Vector3.right * pitch +
             Vector3.forward * roll
         );
+
+        // 6) Botones (hardware o teclado)
+        bool tabPressed = hw ? HapticManager.Instance.btnTab : Input.GetKeyDown(KeyCode.Tab);
+        bool spacePressed = hw ? HapticManager.Instance.btnSpace : Input.GetKeyDown(KeyCode.Space);
+
+        if (tabPressed) SwitchCamera();
+        if (spacePressed)
+        {
+            dropper?.DropPackage();
+            // breve vibraciÃ³n de feedback
+            HapticManager.Instance?.SendHaptic("{\"vib\":200}");
+            Invoke(nameof(StopVibe), 0.1f);
+        }
     }
 
-    void HandleCameraSwitch()
+    void SwitchCamera()
     {
-        if (!Input.GetKeyDown(KeyCode.Tab)) return;
-
         cameraPos = (cameraPos + 1) % 3;
         thirdPerson.Priority = cameraPos == 0 ? 1 : 0;
         topView.Priority = cameraPos == 1 ? 1 : 0;
         frontView.Priority = cameraPos == 2 ? 1 : 0;
+    }
 
-        Debug.Log("Camera changed to: " + cameraPos);
+    void StopVibe()
+    {
+        HapticManager.Instance?.SendHaptic("{\"vib\":0}");
     }
 }
