@@ -1,6 +1,10 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
+using static GameSettings;
+
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -8,6 +12,11 @@ using UnityEditor;
 
 public class Menu : MonoBehaviour
 {
+
+    [Header("UI")]
+    public TextMeshProUGUI difficultyText;
+
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -25,9 +34,29 @@ public class Menu : MonoBehaviour
         SceneManager.LoadSceneAsync(1);
     }
 
+    /// <summary>
+    /// Cicla la dificultad Easy → Medium → Hard → Easy …
+    /// </summary>  
     public void dificultad()
     {
+        switch (GameSettings.currentDifficulty)
+        {
+            case Difficulty.Easy:
+                GameSettings.currentDifficulty = Difficulty.Medium;
+                break;
+            case Difficulty.Medium:
+                GameSettings.currentDifficulty = Difficulty.Hard;
+                break;
+            default:
+                GameSettings.currentDifficulty = Difficulty.Easy;
+                break;
+        }
+        UpdateDifficultyText();
+    }
 
+    void UpdateDifficultyText()
+    {
+        difficultyText.text = $"Dificultad: {GameSettings.currentDifficulty}";
     }
 
     public void salir()
