@@ -4052,8 +4052,8 @@ MonoBehaviour:
   yawAmount: 120
   useHardwareInput: 1
   smoothing: 0.1
-  deadzone: 0.1
-  dropper: {fileID: 0}
+  deadzone: 0.2
+  dropper: {fileID: 1128074286}
   thirdPerson: {fileID: 1503689602}
   topView: {fileID: 420521755}
   frontView: {fileID: 445136454}
@@ -7415,7 +7415,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4135071543177565503, guid: e1322b3ae47b1c8499c50bfdd788d068, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -50
       objectReference: {fileID: 0}
     - target: {fileID: 4135071543177565503, guid: e1322b3ae47b1c8499c50bfdd788d068, type: 3}
       propertyPath: m_LocalPosition.z

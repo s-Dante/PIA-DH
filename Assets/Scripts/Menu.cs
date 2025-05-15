@@ -59,6 +59,21 @@ public class Menu : MonoBehaviour
         difficultyText.text = $"Dificultad: {GameSettings.currentDifficulty}";
     }
 
+
+    public void controlStyle()
+    {
+        switch (GameSettings.currentControlStyle)
+        {
+            case ControlStyle.Keyboard:
+                GameSettings.currentControlStyle = ControlStyle.Haptic;
+                break;
+            default:
+                GameSettings.currentControlStyle = ControlStyle.Keyboard;
+                break;
+        }
+    }
+
+
     public void salir()
     {
 #if UNITY_EDITOR

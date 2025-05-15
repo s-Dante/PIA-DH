@@ -95,4 +95,10 @@ public class HapticManager : MonoBehaviour
         if (port != null && port.IsOpen)
             port.WriteLine(json);
     }
+
+    public void PrintLCD(string text)
+    {
+        if (port != null && port.IsOpen)
+            port.WriteLine($"{{\"lcd\":\"{text}\"}}");
+    }   
 }

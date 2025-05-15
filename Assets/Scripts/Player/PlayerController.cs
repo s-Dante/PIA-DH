@@ -9,70 +9,70 @@ public class PlayerController : MonoBehaviour
     private float yaw;
 
     [Header("Input")]
-    [Tooltip("¿Usar joystick hardware si está disponible?")]
     public bool useHardwareInput = true;
-    [Range(0f, 1f), Tooltip("Suavizado exponencial (más bajo = más lento)")]
-    public float smoothing = 0.1f;
-    [Range(0f, 0.5f), Tooltip("Deadzone para ignorar ruido pequeño")]
-    public float deadzone = 0.1f;
-    private float smoothX = 0f, smoothY = 0f;
+    [Range(0f, 1f)] public float smoothing = 0.1f;
+    [Range(0f, 0.5f)] public float deadzone = 0.1f;
+    private float smoothX, smoothY;
 
     [Header("Dropper")]
     public PackageDropper dropper;
 
     [Header("Cámaras")]
     public CinemachineVirtualCamera thirdPerson, topView, frontView;
-    private int cameraPos = 0;
+    private int cameraPos;
+
+    // flanco detection
+    private bool lastTabHW, lastSpaceHW;
 
     void Update()
     {
-        // 1) Obtener raw input (hardware o teclado)
-        float rawX, rawY;
         bool hw = useHardwareInput && HapticManager.Instance != null;
-        if (hw)
-        {
-            rawX = HapticManager.Instance.joyX;
-            rawY = HapticManager.Instance.joyY;
-        }
-        else
-        {
-            rawX = Input.GetAxis("Horizontal");
-            rawY = Input.GetAxis("Vertical");
-        }
 
-        // 2) Deadzone
-        if (Mathf.Abs(rawX) < deadzone) rawX = 0;
-        if (Mathf.Abs(rawY) < deadzone) rawY = 0;
+        // --- 1) Obtener y suavizar ejes ---
+        float rawX = hw
+            ? HapticManager.Instance.joyX
+            : Input.GetAxis("Horizontal");
+        float rawY = hw
+            ? HapticManager.Instance.joyY
+            : Input.GetAxis("Vertical");
 
-        // 3) Suavizado exponencial
+        if (Mathf.Abs(rawX) < deadzone) rawX = 0f;
+        if (Mathf.Abs(rawY) < deadzone) rawY = 0f;
+
         smoothX = Mathf.Lerp(smoothX, rawX, smoothing);
         smoothY = Mathf.Lerp(smoothY, rawY, smoothing);
 
-        // 4) Desplazamiento hacia adelante
+        // --- 2) Movimiento adelante ---
         transform.position += transform.forward * speed * Time.deltaTime;
 
-        // 5) Rotaciones: yaw, pitch, roll
+        // --- 3) Rotación ---
         yaw += yawAmount * smoothX * Time.deltaTime;
         float pitch = Mathf.Lerp(0, 20, Mathf.Abs(smoothY)) * Mathf.Sign(smoothY);
         float roll = Mathf.Lerp(0, 30, Mathf.Abs(smoothX)) * -Mathf.Sign(smoothX);
-        transform.localRotation = Quaternion.Euler(
-            Vector3.up * yaw +
-            Vector3.right * pitch +
-            Vector3.forward * roll
-        );
+        transform.localRotation =
+            Quaternion.Euler(Vector3.up * yaw + Vector3.right * pitch + Vector3.forward * roll);
 
-        // 6) Botones (hardware o teclado)
-        bool tabPressed = hw ? HapticManager.Instance.btnTab : Input.GetKeyDown(KeyCode.Tab);
-        bool spacePressed = hw ? HapticManager.Instance.btnSpace : Input.GetKeyDown(KeyCode.Space);
+        // --- 4) Cambio de cámara (Tab) ---
+        bool tabHW = hw && HapticManager.Instance.btnTab;
+        bool tabKB = !hw && Input.GetKeyDown(KeyCode.Tab);
+        if ((tabHW && !lastTabHW) || tabKB)
+        {
+            SwitchCamera();
+            HapticManager.Instance?.PrintLCD("CAMBIO CAM");
+        }
+        lastTabHW = tabHW;
 
-        if (tabPressed) SwitchCamera();
-        if (spacePressed)
+        // --- 5) Soltar paquete (Space) ---
+        bool spaceHW = hw && HapticManager.Instance.btnSpace;
+        bool spaceKB = !hw && Input.GetKeyDown(KeyCode.Space);
+        if ((spaceHW && !lastSpaceHW) || spaceKB)
         {
             dropper?.DropPackage();
-            // breve vibración de feedback
             HapticManager.Instance?.SendHaptic("{\"vib\":200}");
             Invoke(nameof(StopVibe), 0.1f);
+            HapticManager.Instance?.PrintLCD("PAQUETE!");
         }
+        lastSpaceHW = spaceHW;
     }
 
     void SwitchCamera()

@@ -143,27 +143,34 @@ public class GameManager : MonoBehaviour
         if (correcto)
         {
             successCount++;
-            HapticManager.Instance.SendHaptic("{\"type\":\"haptic\",\"vib\":150}");
-            HapticManager.Instance.SendHaptic("{\"type\":\"haptic\",\"led_ok\":1}");
-            HapticManager.Instance.SendHaptic("{\"type\":\"haptic\",\"lcd\":\"OK\"}");
-
+            HapticManager.Instance.SendHaptic("{\"vib\":150}");
+            HapticManager.Instance.SendHaptic("{\"led_ok\":1}");
+            // Muestra “OK” en la LCD
+            HapticManager.Instance.PrintLCD("OK");
         }
         else
         {
             failCount++;
+            HapticManager.Instance.SendHaptic("{\"led_fail\":1}");
+            // Muestra “FALLA” en la LCD
+            HapticManager.Instance.PrintLCD("FALLA");
         }
 
         UpdateCounters();
 
-        // Checar victoria/derrota
-        if (successCount >= missionsCount) { 
+        // Victoria/derrota
+        if (successCount >= missionsCount)
+        {
+            HapticManager.Instance.PrintLCD("GANASTE!");
             EndGame(true);
-            return; 
+            return;
         }
 
-        if (failCount >= maxFailures) { 
+        if (failCount >= maxFailures)
+        {
+            HapticManager.Instance.PrintLCD("PERDISTE!");
             EndGame(false);
-            return; 
+            return;
         }
 
         // Siguiente misión
@@ -181,6 +188,9 @@ public class GameManager : MonoBehaviour
 
         currentTarget = missionCountries[currentMissionIndex];
         UpdateHUD();
+
+        // Envía el nombre del país al LCD
+        HapticManager.Instance.PrintLCD(currentTarget.name);
 
         // Easy: resaltar con emisión
         if (currentDifficulty == Difficulty.Easy)
