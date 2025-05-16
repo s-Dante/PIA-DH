@@ -12,15 +12,6 @@ public class PackageDropper : MonoBehaviour
     [Tooltip("Si quieres que el paquete salga con velocidad")]
     public float dropForce = 0f;
 
-    void Update()
-    {
-        // Cambia KeyCode.Space por la tecla que prefieras
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            DropPackage();
-        }
-    }
-
     public void DropPackage()
     {
         if (packagePrefab == null || dropPoint == null)

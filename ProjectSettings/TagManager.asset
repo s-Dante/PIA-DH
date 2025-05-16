@@ -5,14 +5,15 @@ TagManager:
   serializedVersion: 3
   tags:
   - Country
+  - Ocean
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Country
   - Water
   - UI
-  - 
+  - Volume
   - 
   - 
   - 

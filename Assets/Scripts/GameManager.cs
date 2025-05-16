@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using static GameSettings;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -35,14 +36,30 @@ public class GameManager : MonoBehaviour
     public GameObject losePanel;
 
     [Header("Dificultad Hard")]
-    public float timePerGame = 60f;  // segundos para Hard
+    public float timePerGame = 30f;  // segundos para Hard
 
     // Estado interno
     private int successCount = 0;
     private int failCount = 0;
     private Difficulty currentDifficulty;
+
+    //Easy Mode
+    [Header("Bandera Fácil")]
+    public GameObject flagpolePrefab;
+    private GameObject currentFlag;
+
+    [Header("Datos de Bandera")]
+    public List<FlagData> flags;      // asignas aquí todos tus ScriptableObjects
+
+    [Header("UI")]
+    public UnityEngine.UI.Image uiFlagImage;
+
+    //Medium Mode
+    public float highlightDuration = 3f;
+    private Coroutine highlightCoroutine;
     private Dictionary<Transform, Material[]> originalMaterials;
-    private bool isGrayscaleActive = false;
+
+    //Hard Mode
     private float timeRemaining;
     private bool timerRunning = false;
 
@@ -107,7 +124,10 @@ public class GameManager : MonoBehaviour
     {
         // Medium: al presionar H
         if (currentDifficulty == Difficulty.Medium && Input.GetKeyDown(KeyCode.H))
-            ToggleGrayscale();
+        {
+            if (highlightCoroutine != null) StopCoroutine(highlightCoroutine);
+            highlightCoroutine = StartCoroutine(HighlightTemporary());
+        }
 
         // Hard: actualizar timer
         if (currentDifficulty == Difficulty.Hard && timerRunning)
@@ -189,13 +209,68 @@ public class GameManager : MonoBehaviour
         currentTarget = missionCountries[currentMissionIndex];
         UpdateHUD();
 
-        // Envía el nombre del país al LCD
-        HapticManager.Instance.PrintLCD(currentTarget.name);
+        // 1) Actualiza siempre la UI
+        var data = flags.Find(f => f.countryName == currentTarget.name);
+        if (data != null)
+        {
+            uiFlagImage.sprite = data.flagSprite;
+            // Asignas el sprite…
+            uiFlagImage.sprite = data.flagSprite;
 
-        // Easy: resaltar con emisión
+            // Ahora ajustas la altura a, digamos, 80px y calculas el ancho manteniendo aspect ratio:
+            RectTransform rt = uiFlagImage.rectTransform;
+            float desiredHeight = 80f;
+            float spriteW = data.flagSprite.rect.width;
+            float spriteH = data.flagSprite.rect.height;
+            float aspect = spriteW / spriteH;
+
+            // Fijas sizeDelta: x = ancho, y = alto
+            rt.sizeDelta = new Vector2(desiredHeight * aspect, desiredHeight);
+        }
+        else
+        {
+            Debug.LogWarning($"No hay FlagData para {currentTarget.name}");
+        }
+
+        // 2) Easy: instanciar asta con la bandera
         if (currentDifficulty == Difficulty.Easy)
-            HighlightTargetEmission();
+        {
+            // elimina asta previa
+            if (currentFlag) Destroy(currentFlag);
+
+            // calcula centro del país
+            var rendCountry = currentTarget.GetComponent<Renderer>();
+            Vector3 centerWorld = rendCountry != null
+                ? rendCountry.bounds.center
+                : currentTarget.position;
+
+            // instancia el prefab
+            float flagHeight = 2.0f;
+            currentFlag = Instantiate(
+                flagpolePrefab,
+                centerWorld + Vector3.up * flagHeight,
+                Quaternion.identity
+            );
+            currentFlag.transform.SetParent(currentTarget, worldPositionStays: true);
+
+            // Busca el Renderer de la bandera dentro del prefab
+            var flagTransform = currentFlag.transform.Find("Flag");
+            if (flagTransform != null)
+            {
+                var flagRend = flagTransform.GetComponent<Renderer>();
+                // Usa MaterialPropertyBlock para no duplicar materiales
+                var block = new MaterialPropertyBlock();
+                flagRend.GetPropertyBlock(block);
+                block.SetTexture("_BaseMap", data.flagSprite.texture);
+                flagRend.SetPropertyBlock(block);
+            }
+            else
+            {
+                Debug.LogError("No encontré el child 'Flag' en flagpolePrefab.");
+            }
+        }
     }
+
 
     void UpdateHUD()
     {
@@ -222,26 +297,22 @@ public class GameManager : MonoBehaviour
 
     // ——— Funciones de dificultad ———
 
-    void HighlightTargetEmission()
+    IEnumerator HighlightTemporary()
     {
-        var rend = currentTarget.GetComponent<Renderer>();
-        if (rend == null) return;
-
-        // Activar emisión amarilla
-        rend.material.EnableKeyword("_EMISSION");
-        rend.material.SetColor("_EmissionColor", Color.yellow * 2f);
+        // aplica gris a todos menos currentTarget
+        ApplyGrayscale(true);
+        yield return new WaitForSeconds(highlightDuration);
+        // quita el gris
+        ApplyGrayscale(false);
     }
 
-    void ToggleGrayscale()
+    void ApplyGrayscale(bool apply)
     {
-        isGrayscaleActive = !isGrayscaleActive;
-
         foreach (Transform country in mapParent)
         {
             var rend = country.GetComponent<Renderer>();
             if (rend == null) continue;
-
-            if (country == currentTarget || !isGrayscaleActive)
+            if (country == currentTarget || !apply)
             {
                 // Restaurar original
                 if (originalMaterials.TryGetValue(country, out var mats))
@@ -263,5 +334,16 @@ public class GameManager : MonoBehaviour
                 rend.materials = grayMats;
             }
         }
+    }
+
+    // Resalta el país actual con emisión amarilla
+    void HighlightTargetEmission()
+    {
+        var rend = currentTarget.GetComponent<Renderer>();
+        if (rend == null) return;
+
+        // Activar emisión amarilla
+        rend.material.EnableKeyword("_EMISSION");
+        rend.material.SetColor("_EmissionColor", Color.yellow * 2f);
     }
 }

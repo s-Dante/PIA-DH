@@ -11,10 +11,15 @@ public class MenuManager : MonoBehaviour
     public GameObject panelDifficulty;
     public GameObject panelControlStyle;
     public GameObject panelCredits;
+    public GameObject panelInstructions;
 
     [Header("Fade")]
     public CanvasGroup fadeCanvas;
     public float fadeDuration = 0.5f;
+
+    [Header("Instrucciones")]
+    [Tooltip("Tiempo en segundos que se muestra la pantalla de instrucciones antes de arrancar el juego")]
+    public float instructionDuration = 3f;
 
     void Start()
     {
@@ -22,6 +27,7 @@ public class MenuManager : MonoBehaviour
         // asegúrate que el fade empiece transparente
         fadeCanvas.alpha = 0f;
         fadeCanvas.blocksRaycasts = false;
+        panelInstructions.SetActive(false);
     }
 
     // -----------------------
@@ -33,6 +39,7 @@ public class MenuManager : MonoBehaviour
         panelDifficulty.SetActive(false);
         panelControlStyle.SetActive(false);
         panelCredits.SetActive(false);
+
     }
 
     public void ShowDifficulty()
@@ -58,8 +65,20 @@ public class MenuManager : MonoBehaviour
     // -----------------------
     public void OnPlayPressed()
     {
-        StartCoroutine(FadeAndLoad(1));  // suponiendo escena índice 1 = juego
+        panelMain.SetActive(false);
+        panelInstructions.SetActive(true);
+        StartCoroutine(InstructionsThenLoad());
     }
+
+    IEnumerator InstructionsThenLoad()
+    {
+        // Muestra un temporizador real (ignora Time.timeScale)
+        yield return new WaitForSecondsRealtime(instructionDuration);
+        panelInstructions.SetActive(false);
+        // Inicia la transición con fade y carga de escena 1
+        StartCoroutine(FadeAndLoad(1));
+    }
+
 
     public void OnOptionsPressed() => ShowDifficulty();
 
@@ -126,15 +145,12 @@ public class MenuManager : MonoBehaviour
     // Botones de Credits Submenu
     // -----------------------
     public void OnCreditsBack() => ShowMain();
-
     // -----------------------
     // Fade + Scene Load
     // -----------------------
     IEnumerator FadeAndLoad(int sceneIndex)
     {
-        // bloquea raycasts durante la transición
         fadeCanvas.blocksRaycasts = true;
-        // Fade-in
         float t = 0f;
         while (t < fadeDuration)
         {
@@ -144,11 +160,9 @@ public class MenuManager : MonoBehaviour
         }
         fadeCanvas.alpha = 1f;
 
-        // Carga asíncrona
         var op = SceneManager.LoadSceneAsync(sceneIndex);
         while (!op.isDone) yield return null;
 
-        // Fade-out
         t = 0f;
         while (t < fadeDuration)
         {

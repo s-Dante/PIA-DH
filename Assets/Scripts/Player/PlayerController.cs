@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Cinemachine;
+using static GameSettings;
 
 public class PlayerController : MonoBehaviour
 {
@@ -26,7 +27,8 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        bool hw = useHardwareInput && HapticManager.Instance != null;
+        bool hw = currentControlStyle == ControlStyle.Haptic
+                  && HapticManager.Instance != null;
 
         // --- 1) Obtener y suavizar ejes ---
         float rawX = hw
@@ -58,7 +60,7 @@ public class PlayerController : MonoBehaviour
         if ((tabHW && !lastTabHW) || tabKB)
         {
             SwitchCamera();
-            HapticManager.Instance?.PrintLCD("CAMBIO CAM");
+            if (hw) HapticManager.Instance.PrintLCD("CAMBIO CAM");
         }
         lastTabHW = tabHW;
 
@@ -67,10 +69,16 @@ public class PlayerController : MonoBehaviour
         bool spaceKB = !hw && Input.GetKeyDown(KeyCode.Space);
         if ((spaceHW && !lastSpaceHW) || spaceKB)
         {
+            // siempre dropeas
             dropper?.DropPackage();
-            HapticManager.Instance?.SendHaptic("{\"vib\":200}");
-            Invoke(nameof(StopVibe), 0.1f);
-            HapticManager.Instance?.PrintLCD("PAQUETE!");
+
+            // solo háptico envía vibración y LCD
+            if (hw)
+            {
+                HapticManager.Instance.SendHaptic("{\"vib\":200}");
+                Invoke(nameof(StopVibe), 0.1f);
+                HapticManager.Instance.PrintLCD("PAQUETE!");
+            }
         }
         lastSpaceHW = spaceHW;
     }
