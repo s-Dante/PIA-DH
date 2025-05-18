@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using static GameSettings;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -74,9 +75,12 @@ public class GameManager : MonoBehaviour
     void Awake()
     {
         // Singleton
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 
     void Start()
@@ -346,4 +350,17 @@ public class GameManager : MonoBehaviour
         HapticManager.Instance.PrintLCD("");
     }
 
+
+
+    //Paraganar o perder
+    /// <summary>
+    /// Llamar desde los botones de Win/Lose para reiniciar el nivel
+    /// </summary>
+    public void RestartAfterEnd()
+    {
+        winPanel.SetActive(false);
+        losePanel.SetActive(false);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
 }

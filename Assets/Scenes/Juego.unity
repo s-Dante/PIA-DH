@@ -742,7 +742,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1727674385}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1455610147}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -1386,9 +1386,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 315295316}
-        m_TargetAssemblyTypeName: PauseManager, Assembly-CSharp
-        m_MethodName: RestartLevel
+      - m_Target: {fileID: 594074391}
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: RestartAfterEnd
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4385,9 +4385,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 315295316}
-        m_TargetAssemblyTypeName: PauseManager, Assembly-CSharp
-        m_MethodName: RestartLevel
+      - m_Target: {fileID: 594074391}
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: RestartAfterEnd
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -9677,6 +9677,38 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2002546673341219015, guid: 01cf4a0b287fafe42a8dc5389193e0a0, type: 3}
+--- !u!1 &1455610146
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1455610147}
+  m_Layer: 0
+  m_Name: pAUSEmENU
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1455610147
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1455610146}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1920, y: 1080, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 177314167}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1457523933 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -1134915875071955630, guid: 01cf4a0b287fafe42a8dc5389193e0a0, type: 3}
@@ -11575,7 +11607,7 @@ CanvasGroup:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1727674384}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Alpha: 1
   m_Interactable: 1
   m_BlocksRaycasts: 1
@@ -14592,7 +14624,7 @@ SceneRoots:
   - {fileID: 1780136414}
   - {fileID: 293727954}
   - {fileID: 594074392}
-  - {fileID: 177314167}
+  - {fileID: 1455610147}
   - {fileID: 382546601}
   - {fileID: 976731427}
   - {fileID: 447900449}
