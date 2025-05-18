@@ -1,13 +1,15 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class PauseManager : MonoBehaviour
 {
     [Header("Panel de Pausa")]
-    public GameObject panelPause; // Asignar aqu� el Panel (con su CanvasGroup o Image)
+    public GameObject panelPause; // Asignar aquí el Panel (con su CanvasGroup o Image)
 
+    public CanvasGroup panelPauseGroup;
     private bool isPaused = false;
+
 
     void Start()
     {
@@ -18,6 +20,7 @@ public class PauseManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // Cambia el estado de pausa al presionar Escape
             if (isPaused) Resume();
             else Pause();
         }

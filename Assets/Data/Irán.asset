@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92c8ba7c473c8ff4ab671f2fe680a46f, type: 3}
   m_Name: "Ir\xE1n"
   m_EditorClassIdentifier: 
-  countryName: "ir\xE1n"
+  countryName: "Ir\xE1n"
   flagSprite: {fileID: 21300000, guid: 175759d50e5707b4eb891d522d62ca42, type: 3}

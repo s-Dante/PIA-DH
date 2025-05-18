@@ -5,7 +5,6 @@ using static GameSettings;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movimiento")]
-    public float speed = 5f;
     public float yawAmount = 120f;
     private float yaw;
 
@@ -22,6 +21,11 @@ public class PlayerController : MonoBehaviour
     public CinemachineVirtualCamera thirdPerson, topView, frontView;
     private int cameraPos;
 
+    [Header("Velocidad")]
+    public float speed = 5f;
+    public float minSpeed = 2f, maxSpeed = 20f;
+    public float speedChangeRate = 10f;
+
     // flanco detection
     private bool lastTabHW, lastSpaceHW;
 
@@ -29,6 +33,7 @@ public class PlayerController : MonoBehaviour
     {
         bool hw = currentControlStyle == ControlStyle.Haptic
                   && HapticManager.Instance != null;
+
 
         // --- 1) Obtener y suavizar ejes ---
         float rawX = hw
@@ -43,6 +48,20 @@ public class PlayerController : MonoBehaviour
 
         smoothX = Mathf.Lerp(smoothX, rawX, smoothing);
         smoothY = Mathf.Lerp(smoothY, rawY, smoothing);
+
+
+        if (hw)
+        {
+            // potValue va de –1 a +1, lo usamos como “gas” o “freno”
+            speed += HapticManager.Instance.potValue * speedChangeRate * Time.deltaTime;
+        }
+        else
+        {
+            if (Input.GetKey(KeyCode.E)) speed += speedChangeRate * Time.deltaTime;
+            if (Input.GetKey(KeyCode.Q)) speed -= speedChangeRate * Time.deltaTime;
+        }
+        speed = Mathf.Clamp(speed, minSpeed, maxSpeed);
+
 
         // --- 2) Movimiento adelante ---
         transform.position += transform.forward * speed * Time.deltaTime;

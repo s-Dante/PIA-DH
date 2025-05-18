@@ -16,6 +16,8 @@ public class HapticManager : MonoBehaviour
     public float joyX, joyY;
     public bool btnEnter, btnTab, btnSpace, btnH;
 
+    public float potValue; // <— nuevo
+
     void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
@@ -57,15 +59,15 @@ public class HapticManager : MonoBehaviour
 
     void ParseLine(string line)
     {
-        // Filtrar sólo mensajes de tipo input
         if (!line.Contains("\"type\":\"input\"")) return;
 
         joyX = float.Parse(GetValue(line, "\"x\":", ","));
         joyY = float.Parse(GetValue(line, "\"y\":", ","));
+        potValue = float.Parse(GetValue(line, "\"pot\":", ",")); // <— nuevo
+
         btnEnter = GetValue(line, "\"enter\":", ",") == "1";
         btnTab = GetValue(line, "\"tab\":", ",") == "1";
         btnSpace = GetValue(line, "\"space\":", ",") == "1";
-        // Para la última propiedad (h) usamos '}' como delimitador
         btnH = GetValue(line, "\"h\":", "}") == "1";
     }
 
@@ -100,5 +102,6 @@ public class HapticManager : MonoBehaviour
     {
         if (port != null && port.IsOpen)
             port.WriteLine($"{{\"lcd\":\"{text}\"}}");
-    }   
+    }
+
 }

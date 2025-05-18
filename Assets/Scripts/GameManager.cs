@@ -63,6 +63,14 @@ public class GameManager : MonoBehaviour
     private float timeRemaining;
     private bool timerRunning = false;
 
+
+    //Buzzer
+    readonly (int freq, int dur) BUZZ_CORRECT = (1000, 80);
+    readonly (int freq, int dur) BUZZ_WRONG = (400, 200);
+    readonly (int freq, int dur) BUZZ_WIN = (1200, 300);
+    readonly (int freq, int dur) BUZZ_LOSE = (200, 500);
+
+
     void Awake()
     {
         // Singleton
@@ -163,113 +171,109 @@ public class GameManager : MonoBehaviour
         if (correcto)
         {
             successCount++;
-            HapticManager.Instance.SendHaptic("{\"vib\":150}");
-            HapticManager.Instance.SendHaptic("{\"led_ok\":1}");
-            // Muestra “OK” en la LCD
+            HapticManager.Instance.SendHaptic($"{{\"led_ok\":1}}");
+            HapticManager.Instance.SendHaptic($"{{\"buz\":{BUZZ_CORRECT.freq},\"dur\":{BUZZ_CORRECT.dur}}}");
             HapticManager.Instance.PrintLCD("OK");
         }
         else
         {
             failCount++;
-            HapticManager.Instance.SendHaptic("{\"led_fail\":1}");
-            // Muestra “FALLA” en la LCD
+            HapticManager.Instance.SendHaptic($"{{\"led_fail\":1}}");
+            HapticManager.Instance.SendHaptic($"{{\"buz\":{BUZZ_WRONG.freq},\"dur\":{BUZZ_WRONG.dur}}}");
             HapticManager.Instance.PrintLCD("FALLA");
         }
 
         UpdateCounters();
 
-        // Victoria/derrota
+        // limpiar LCD al cabo de 1.5s
+        StartCoroutine(ClearLCDAfter(1.5f));
+
+        // victoria/derrota…
         if (successCount >= missionsCount)
         {
+            HapticManager.Instance.SendHaptic($"{{\"buz\":{BUZZ_WIN.freq},\"dur\":{BUZZ_WIN.dur}}}");
             HapticManager.Instance.PrintLCD("GANASTE!");
+            StartCoroutine(ClearLCDAfter(2f));
             EndGame(true);
-            return;
         }
-
-        if (failCount >= maxFailures)
+        else if (failCount >= maxFailures)
         {
+            HapticManager.Instance.SendHaptic($"{{\"buz\":{BUZZ_LOSE.freq},\"dur\":{BUZZ_LOSE.dur}}}");
             HapticManager.Instance.PrintLCD("PERDISTE!");
+            StartCoroutine(ClearLCDAfter(2f));
             EndGame(false);
-            return;
         }
+        else
+        {
+            // esperar a que se limpie y mostrar la siguiente
+            Invoke(nameof(AdvanceMission), 1.6f);
+        }
+    }
 
-        // Siguiente misión
+    void AdvanceMission()
+    {
         currentMissionIndex++;
         ShowNextMission();
     }
 
     void ShowNextMission()
     {
+        // 1) ¿Nos quedamos sin misiones?
         if (currentMissionIndex >= missionCountries.Count)
         {
             EndGame(successCount >= missionsCount);
             return;
         }
 
+        // 2) Asignar el nuevo target
         currentTarget = missionCountries[currentMissionIndex];
+
+        // 3) Mostrarlo en el LCD y programar su limpieza
+        HapticManager.Instance.PrintLCD(currentTarget.name);
+        StartCoroutine(ClearLCDAfter(1.5f));
+
+        // 4) Actualizar toda la UI (texto, bandera UI y tamaño)
         UpdateHUD();
 
-        // 1) Actualiza siempre la UI
         var data = flags.Find(f => f.countryName == currentTarget.name);
         if (data != null)
         {
             uiFlagImage.sprite = data.flagSprite;
-            // Asignas el sprite…
-            uiFlagImage.sprite = data.flagSprite;
-
-            // Ahora ajustas la altura a, digamos, 80px y calculas el ancho manteniendo aspect ratio:
             RectTransform rt = uiFlagImage.rectTransform;
-            float desiredHeight = 80f;
-            float spriteW = data.flagSprite.rect.width;
-            float spriteH = data.flagSprite.rect.height;
-            float aspect = spriteW / spriteH;
-
-            // Fijas sizeDelta: x = ancho, y = alto
+            float desiredHeight = 190f;
+            float aspect = data.flagSprite.rect.width / data.flagSprite.rect.height;
             rt.sizeDelta = new Vector2(desiredHeight * aspect, desiredHeight);
         }
-        else
-        {
-            Debug.LogWarning($"No hay FlagData para {currentTarget.name}");
-        }
 
-        // 2) Easy: instanciar asta con la bandera
+        // 5) Easy-mode: instanciar asta con bandera
         if (currentDifficulty == Difficulty.Easy)
         {
-            // elimina asta previa
             if (currentFlag) Destroy(currentFlag);
-
-            // calcula centro del país
             var rendCountry = currentTarget.GetComponent<Renderer>();
-            Vector3 centerWorld = rendCountry != null
+            Vector3 center = rendCountry != null
                 ? rendCountry.bounds.center
                 : currentTarget.position;
 
-            // instancia el prefab
-            float flagHeight = 2.0f;
             currentFlag = Instantiate(
                 flagpolePrefab,
-                centerWorld + Vector3.up * flagHeight,
+                center + Vector3.up * 2f,
                 Quaternion.identity
             );
-            currentFlag.transform.SetParent(currentTarget, worldPositionStays: true);
+            currentFlag.transform.SetParent(currentTarget, true);
 
-            // Busca el Renderer de la bandera dentro del prefab
             var flagTransform = currentFlag.transform.Find("Flag");
             if (flagTransform != null)
             {
-                var flagRend = flagTransform.GetComponent<Renderer>();
-                // Usa MaterialPropertyBlock para no duplicar materiales
                 var block = new MaterialPropertyBlock();
-                flagRend.GetPropertyBlock(block);
+                var rendFlag = flagTransform.GetComponent<Renderer>();
+                rendFlag.GetPropertyBlock(block);
                 block.SetTexture("_BaseMap", data.flagSprite.texture);
-                flagRend.SetPropertyBlock(block);
+                rendFlag.SetPropertyBlock(block);
             }
-            else
-            {
-                Debug.LogError("No encontré el child 'Flag' en flagpolePrefab.");
-            }
+            else Debug.LogError("No encontré 'Flag' dentro de flagpolePrefab");
         }
     }
+
 
 
     void UpdateHUD()
@@ -336,14 +340,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Resalta el país actual con emisión amarilla
-    void HighlightTargetEmission()
+    IEnumerator ClearLCDAfter(float secs)
     {
-        var rend = currentTarget.GetComponent<Renderer>();
-        if (rend == null) return;
-
-        // Activar emisión amarilla
-        rend.material.EnableKeyword("_EMISSION");
-        rend.material.SetColor("_EmissionColor", Color.yellow * 2f);
+        yield return new WaitForSeconds(secs);
+        HapticManager.Instance.PrintLCD("");
     }
+
 }
