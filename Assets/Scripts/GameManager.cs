@@ -12,9 +12,10 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("Misión")]
+    public int livesCount = 5;              // o missionsCount, o el valor que quieras
     public Transform mapParent;
-    public int missionsCount = 5;
-    public int maxFailures = 3;
+    private int missionsCount;
+    private int maxFailures;
 
     private List<Transform> missionCountries;
     private int currentMissionIndex = 0;
@@ -35,6 +36,8 @@ public class GameManager : MonoBehaviour
     [Header("Pantallas finales")]
     public GameObject winPanel;
     public GameObject losePanel;
+    public GameObject pausePanel;
+    public GameObject gameplayUI;
 
     [Header("Dificultad Hard")]
     public float timePerGame = 30f;  // segundos para Hard
@@ -50,10 +53,20 @@ public class GameManager : MonoBehaviour
     private GameObject currentFlag;
 
     [Header("Datos de Bandera")]
-    public List<FlagData> flags;      // asignas aquí todos tus ScriptableObjects
+    public List<FlagData> flags;      // Todos los objetos de bandera
 
     [Header("UI")]
     public UnityEngine.UI.Image uiFlagImage;
+
+    [Header("Resultados Dinámicos")]
+    public RectTransform resultsContainer;  // arrastra aquí tu Panel con Horizontal Layout
+    public GameObject iconPrefab;           // arrastra aquí el prefab IconPrefab
+    public Sprite defaultSprite;
+    public Sprite successSprite;
+    public Sprite failureSprite;
+
+    private List<Image> resultIcons = new List<Image>();
+
 
     //Medium Mode
     public float highlightDuration = 3f;
@@ -64,6 +77,7 @@ public class GameManager : MonoBehaviour
     private float timeRemaining;
     private bool timerRunning = false;
 
+    private bool isPaused;
 
     //Buzzer
     readonly (int freq, int dur) BUZZ_CORRECT = (1000, 80);
@@ -74,6 +88,9 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
+        missionsCount = livesCount;
+        maxFailures = livesCount;
+
         // Singleton
         if (Instance != null && Instance != this)
         {
@@ -81,6 +98,14 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        for (int i = 0; i < missionsCount; i++)
+        {
+            var go = Instantiate(iconPrefab, resultsContainer);
+            var img = go.GetComponent<Image>();
+            img.sprite = defaultSprite;
+            resultIcons.Add(img);
+        }
     }
 
     void Start()
@@ -88,6 +113,8 @@ public class GameManager : MonoBehaviour
         // Ocultar finales
         winPanel.SetActive(false);
         losePanel.SetActive(false);
+        pausePanel.SetActive(false);
+        gameplayUI.SetActive(true);
 
         // Leer dificultad seleccionada
         currentDifficulty = GameSettings.currentDifficulty;
@@ -134,6 +161,12 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isPaused) ResumeGame();
+            else PauseGame();
+        }
+
         // Medium: al presionar H
         if (currentDifficulty == Difficulty.Medium && Input.GetKeyDown(KeyCode.H))
         {
@@ -154,6 +187,46 @@ public class GameManager : MonoBehaviour
         }
     }
 
+
+    // ——— Pausa ——— // --- Seguir --- // --- Reinciar --- // --- Menu --- // --- Salir --- //
+    public void PauseGame()
+    {
+        pausePanel.transform.SetAsLastSibling();
+        pausePanel.SetActive(true);
+        Time.timeScale = 0f;
+        isPaused = true;
+    }
+
+    public void ResumeGame()
+    {
+        pausePanel.SetActive(false);
+        Time.timeScale = 1f;
+        isPaused = false;
+    }
+
+    public void RestartLevel()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void ReturnToMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(0);
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.ExitPlaymode();
+#else
+        Application.Quit();
+#endif
+    }
+
+
+    // ——— Misiones ———
     void InitializeMissions()
     {
         // Recoger y revolver
@@ -289,8 +362,13 @@ public class GameManager : MonoBehaviour
 
     void UpdateCounters()
     {
-        successText.text = $"Entregas: {successCount} / {missionsCount}";
-        failText.text = $"Errores: {failCount} / {maxFailures}";
+        int total = resultIcons.Count;
+        for (int i = 0; i < total; i++)
+        {
+            if (i < successCount) resultIcons[i].sprite = successSprite;
+            else if (i < successCount + failCount) resultIcons[i].sprite = failureSprite;
+            else resultIcons[i].sprite = defaultSprite;
+        }
     }
 
     void EndGame(bool won)
